@@ -1,11 +1,9 @@
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional
-import pandas as pd
-import numpy as np
 
 import json_tricks
-from datetime import datetime, timedelta
+import numpy as np
 
 from pm25_forecast_assessment.daydataclass import DailyData
 from pm25_forecast_assessment.metrics import Metric
@@ -18,11 +16,11 @@ class Experiment:
         location: str,
         start_date: datetime,
         end_date: datetime,
-        metrics: List[Metric],
+        metrics: list[Metric],
         results_directory: str,
         figures_directory: str,
         data_directory: str,
-        forecasts: Optional[List[str]] = None,
+        forecasts: list[str] | None = None,
     ) -> None:
         self.location = location
         self.start_date = start_date
@@ -32,10 +30,9 @@ class Experiment:
         self.figures_directory = figures_directory
         self.data_directory = data_directory
         self.forecasts = forecasts
-        # Load the data
         self.daily_data = self.load_data()
 
-    def load_data(self) -> List[DailyData]:
+    def load_data(self) -> list[DailyData]:
         """
         Return a list of DailyData objects for the location and date range.
         Note this can be slow since data is (down)loaded when the DailyData object is created.
@@ -51,25 +48,53 @@ class Experiment:
             for i in range(delta.days + 1)
         ]
 
-    def evaluate_metrics(self) -> Dict[str, Dict[str, Dict]]:
+    def evaluate_metrics(self) -> dict[str, dict[str, dict]]:
         return {
             day.date: {metric.name: metric(day) for metric in self.metrics}
             for day in self.daily_data
         }
 
-    def save_results(self, results: Dict[str, Dict[str, Dict]]) -> None:
-        for date, day_results in results.items():  # iterate over days
-            # get directory path and check it exists/create it
+    def save_results(self, results: dict[str, dict[str, dict]]) -> None:
+        for date, day_results in results.items():
             directory = Path(self.results_directory, self.location)
             os.makedirs(directory, exist_ok=True)
-            # full filepath includes date
+            
             filepath = str(Path(directory, f"{date}.json"))
             try:
-                json_tricks.dump(day_results, filepath)
+                # Convert numpy types to avoid json-tricks warnings
+                converted_results = self._convert_numpy_types(day_results)
+                json_tricks.dump(converted_results, filepath)
             except ValueError:
-                print(f"Missing values for {date}. Need to decide how to handle this.")
+                print(f"Warning: Missing values for {date}. Skipping this date.")
 
-    def run(self) -> None:
+    @staticmethod
+    def _convert_numpy_types(obj):
+        """Convert numpy types to native Python types for JSON serialization.
+        
+        This prevents json-tricks warnings about experimental numpy scalar serialization.
+        
+        Args:
+            obj: Object that may contain numpy types (dict, list, numpy scalar, etc.)
+            
+        Returns:
+            Object with numpy types converted to native Python types.
+        """
+        if isinstance(obj, dict):
+            return {key: Experiment._convert_numpy_types(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [Experiment._convert_numpy_types(item) for item in obj]
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
+        else:
+            return obj
+
+    def run(self) -> dict[str, dict[str, dict]]:
         results = self.evaluate_metrics()
         self.save_results(results)
         return results
