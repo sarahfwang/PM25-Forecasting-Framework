@@ -1,18 +1,15 @@
 import argparse
 
-import numpy as np
 from datetime import datetime
-from typing import Tuple, Dict
 from pathlib import Path
 
 from pm25_forecast_assessment.experiment import Experiment
 from pm25_forecast_assessment.metrics import (
-    Metric,
-    RMSE,
-    MeanExcessExposure,
     IsSmokeDay,
+    MeanExcessExposure,
+    RMSE,
 )
-from pm25_forecast_assessment.plotters import plot_time_series, confusion_matrix
+from pm25_forecast_assessment.plotters import plot_time_series
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -40,7 +37,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_file(file_name: str) -> Tuple[str, str, str]:
+def load_file(file_name: str) -> tuple[str, str, str]:
     """
     Load the file with the location, start date and end date.
     """
@@ -72,7 +69,7 @@ if __name__ == "__main__":
     figures_directory = Path(Path(__file__).parents[1], "figures")
     results_directory = Path(Path(__file__).parents[1], "results")
     data_directory = Path(Path(__file__).parents[1], "data")
-    forecasts = ["hrrr", "airnow", "geoscf", "cams", "naqfc"]
+    forecasts = ["airnow", "geoscf"]  # Removed "cams", "naqfc" and "hrrr" to avoid API/data issues for now: TODO
     for location, start_date, end_date in zip(locations, start_dates, end_dates):
         experiment = Experiment(
             location=location,
@@ -85,5 +82,4 @@ if __name__ == "__main__":
             forecasts=forecasts,
         )
         results = experiment.run()
-        # print(confusion_matrix(results))
         plot_time_series([experiment], figure_name=args.figure_name)
