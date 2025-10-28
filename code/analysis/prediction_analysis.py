@@ -86,4 +86,4 @@ if __name__ == "__main__":
         )
         results = experiment.run()
         # print(confusion_matrix(results))
-        plot_time_series(experiment, figure_name=args.figure_name)
+        plot_time_series([experiment], figure_name=args.figure_name)
