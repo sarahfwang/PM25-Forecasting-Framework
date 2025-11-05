@@ -42,6 +42,15 @@ def parse_arguments() -> argparse.Namespace:
         help="Name of figure output. Must be a string.",
         default="tmp.pdf",
     )
+    
+    # forecast types
+    parser.add_argument(
+        "--forecasts",
+        type=str,
+        nargs='+',
+        help="Names of forecasts. Must be strings.",
+        default="airnow",
+    )
     return parser.parse_args()
 
 
@@ -87,7 +96,7 @@ if __name__ == "__main__":
     figures_directory = Path(Path(__file__).parents[1], "figures")
     results_directory = Path(Path(__file__).parents[1], "results")
     data_directory = Path(Path(__file__).parents[1], "data")
-    forecasts = ["airnow", "geoscf"]  # Removed "cams", "naqfc" and "hrrr" to avoid API/data issues for now: TODO
+    forecasts = args.forecasts + ['airnow'] # include the baseline
     for location, start_date, end_date in zip(locations, start_dates, end_dates):
         experiment = Experiment(
             location=location,
