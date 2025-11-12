@@ -52,12 +52,14 @@ def create_naqfc_url_and_get_xr(day: datetime.date, cycle: int) -> xr.Dataset:
     url = f"{blob_container}/{AQM_version}/CS/{day:%Y%m%d}/{cycle:02}/{file_name}"
 
     # 2. Fetch grib data
-    response = requests.get(url)
-    with open(file_name, 'wb') as file:
-        file.write(response.content)
+    file = tempfile.NamedTemporaryFile(prefix="tmp_", delete=False)
+    resp = requests.get(url)
+
+    with file as f:
+        f.write(resp.content)
 
     # Open the GRIB2 file
-    ds = xr.open_dataset(file_name, engine='cfgrib')
+    ds = xr.open_dataset(file.name, engine='cfgrib')
 
     return ds
 
