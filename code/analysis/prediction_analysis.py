@@ -96,7 +96,7 @@ if __name__ == "__main__":
     figures_directory = Path(Path(__file__).parents[1], "figures")
     results_directory = Path(Path(__file__).parents[1], "results")
     data_directory = Path(Path(__file__).parents[1], "data")
-    forecasts = args.forecasts + ['airnow'] # include the baseline
+    forecasts = args.forecasts + ['airnow'] # automatically include the airnow baseline
     for location, start_date, end_date in zip(locations, start_dates, end_dates):
         experiment = Experiment(
             location=location,
