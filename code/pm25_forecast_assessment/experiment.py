@@ -61,38 +61,9 @@ class Experiment:
             
             filepath = str(Path(directory, f"{date}.json"))
             try:
-                # Convert numpy types to avoid json-tricks warnings
-                converted_results = self._convert_numpy_types(day_results)
-                json_tricks.dump(converted_results, filepath)
+                json_tricks.dump(day_results, filepath)
             except ValueError:
-                print(f"Warning: Missing values for {date}. Skipping this date.")
-
-    @staticmethod
-    def _convert_numpy_types(obj):
-        """Convert numpy types to native Python types for JSON serialization.
-        
-        This prevents json-tricks warnings about experimental numpy scalar serialization.
-        
-        Args:
-            obj: Object that may contain numpy types (dict, list, numpy scalar, etc.)
-            
-        Returns:
-            Object with numpy types converted to native Python types.
-        """
-        if isinstance(obj, dict):
-            return {key: Experiment._convert_numpy_types(value) for key, value in obj.items()}
-        elif isinstance(obj, list):
-            return [Experiment._convert_numpy_types(item) for item in obj]
-        elif isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, (np.bool_, bool)):
-            return bool(obj)
-        else:
-            return obj
+                print(f"Missing values for {date}. Need to decide how to handle this.")
 
     def run(self) -> dict[str, dict[str, dict]]:
         results = self.evaluate_metrics()
